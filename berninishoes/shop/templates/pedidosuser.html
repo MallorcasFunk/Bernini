@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block content %}
+    <div class="container">
+    	<div class="row">
+    		<div class="col-md-12 col-lg-12">
+    			<h1>Ultimos Pedidos</h1>
+    			<hr class="my-7">
+    		</div>
+    		
+    	</div>
+    </div>
+    <div class="container">
+        <div class="row"><div class="col-md-12 col-lg-12">
+    	{% if pedidos %}
+            <table id="tablapedidos">
+                <thead><th>ID</th><th>Fecha</th><th>Estado</th><th>Importe</th><th>Acciones</th></thead>
+                <tbody>
+            {%for p in pedidos%}
+                <tr><td>{{p.id}}</td><td>{{p.fecha}}</td><td>{{p.estado}}</td><td><script type="text/javascript">
+                var detalle='{{p.detalle|escapejs}}';
+                if(detalle!=""&&detalle!=undefined){
+                    detalle=JSON.parse(detalle);
+                    var prods=detalle["detalle"];
+                    var lprecios=[]
+                    for(var i=0;i<prods.length;i++){
+                        var cant=0;
+                        var precio=0;
+                        if(prods[i]["cantidad"]!="")
+                            cant=parseInt(prods[i]["cantidad"]);
+                        if(prods[i]["precio"]!="")
+                            precio=parseFloat(prods[i]["precio"]);
+                        lprecios.push(cant*precio);
+                    }
+                    var total =0;
+                    for(var i=0;i<lprecios.length;i++){
+                        total=total+lprecios[i];
+                    }
+                    document.write(total.toString()+' Euros');
+                }
+            </script></td><td><button class="btn btn-info btnver" info="{{p.get_absolute_url}}">Ver detalle</button></td></tr>
+            {% endfor %}
+            </tbody>
+            </table>
+    	{% else %}
+    		<h3>No hay pedidos</h3>
+    	{% endif %}
+        </div></div>
+        <script type="text/javascript">
+            $("#tablapedidos").DataTable();
+            $(document).ready(function(){
+                $(".btnver").click(function(event){
+                    event.preventDefault();
+                    var info = $(this).attr("info");
+                    window.location.pathname=info;
+                });
+            });
+        </script>
+    </div>
+{% endblock %}

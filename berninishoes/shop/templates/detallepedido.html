@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% block content %}
+    <div class="container">
+    	<div class="row">
+    		<div class="col-md-12 col-lg-12">
+    			<h1>{{pedido}}</h1>
+    			<hr class="my-7">
+    		</div>
+    		
+    	</div>
+    </div>
+    <div class="container">
+        <div class="row"><div class="col-md-12 col-lg-12">
+        <h3>Datos del pedido</h3>
+            <b>Fecha: </b>{{pedido.fecha}}<br>
+            <b>Estado: </b>{{pedido.estado}}<br>
+        </div></div>
+    </div>
+    <div class="container">
+        <div class="row"><div class="col-md-12 col-lg-12">
+    	<h3>Datos de facturacion</h3>
+        <script type="text/javascript">
+            var datos='{{pedido.detalle|escapejs}}';
+            console.log(datos)
+            if(datos!=""&&datos!=undefined){
+                datos=JSON.parse(datos)['datoscliente']
+                document.write('<b>Nombre: </b>'+datos["nombre"]);
+                document.write('<br><b>Apellidos: </b>'+datos["apellidos"]);
+                document.write('<br><b>Direccion: </b>'+datos["direccion"]);
+                document.write('<br><b>Localidad: </b>'+datos["localidad"]);
+                document.write('<br><b>Provincia: </b>'+datos["provincia"]);
+                document.write('<br><b>Pais: </b>'+datos["pais"]);
+                document.write('<br><b>Telefono: </b>'+datos["telefono"]);
+            }
+        </script>
+        </div></div>
+    </div>
+    <div class="container">
+        <div class="row"><div class="col-md-12 col-lg-12">
+        <h3>Detalle del pedido</h3>
+        <script type="text/javascript">
+            var datos='{{pedido.detalle|escapejs}}';
+            if(datos!=""&&datos!=undefined){
+                var ltotal=[];
+                datos=JSON.parse(datos)['detalle']
+                document.write('<table class="table"><thead><th>Referencia</th><th>Nombre</th><th>Cantidad</th><th>Precio (ud)</th><th>Precio</th><th>Detalle</th></thead><tbody>');
+                for(var i=0;i<datos.length;i++){
+                    document.write('<tr><td>'+datos[i]["id"]+'</td><td>'+datos[i]["nombre"]+'</td><td>'+datos[i]["cantidad"]+'</td><td>'+datos[i]["precio"]+'</td>');
+                    var c=0;
+                    var p=0;
+                    if(datos[i]["cantidad"]!="")
+                        c=parseInt(datos[i]["cantidad"]);
+                    if(datos[i]["precio"]!="")
+                        p=parseFloat(datos[i]["precio"]);
+                    var total=c*p;
+                    ltotal.push(total);
+                    document.write('<td>'+total.toString()+'</td>');
+                    var atribs=datos[i]["detalle"];
+                    document.write('<td>');
+                    for(var j=0;j<atribs.length;j++){
+                        document.write('<span>'+atribs[j]['nombre']+': '+atribs[j]['valor']+'</span><br>');
+                    }
+                    document.write('</td></tr>')
+                }
+                document.write('<tr><td colspan="6"><b>Total pedido: ');
+                var x=0;
+                for(var k=0;k<ltotal.length;k++){
+                    x=x+ltotal[k];
+                }
+                document.write(x.toString()+' Euros</td></tr>');
+                document.write('</tbody></table>');
+            }
+        </script>
+        </div></div>
+    </div>
+{% endblock %}

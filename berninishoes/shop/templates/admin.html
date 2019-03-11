@@ -1,0 +1,152 @@
+{% extends 'baseadmin.html' %}
+{% block content %}
+    <div class="container">
+    	<div class="row">
+    		<div class="col-md-12 col-lg-12">
+    			<h1>Estado de la tienda</h1>
+    			<hr class="my-7">
+    		</div>
+    		
+    	</div>
+    </div>
+    {%csrf_token%}
+    <div class="container">
+        <div class="row">
+            <h3>Productos</h3>
+            <div class="col-md-12 col-lg-12">
+    	       {% if productos %}
+                    <table id="tabproductos">
+                        <thead>
+                            <th>Nombre</th><th>Descripcion</th><th>Precio</th><th>Stock</th><th>Acciones</th>
+                        </thead>
+                        <tbody>
+                            {% for p in productos %}
+                                <tr>
+                                    <td>{{p.nombre}}</td><td>{{p.descripcion}}</td><td>{{p.precio}}</td><td>{{p.stock}}</td><td><input type="button" class="btn btn-primary boton-mod" value="Ver/Modificar" info="{{p.get_admin_absolute_url}}"><input type="button" class="btn btn-danger boton-bor" value="Eliminar" info="{{p.get_admin_absolute_url}}"></td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+    	       {% else %}
+                    NO HAY PRODUCTOS, AÑADE ALGUNO
+    	       {% endif %}
+               <button id="botonanyadir" type="button" class="btn btn-success" value="Añadir Producto">Añadir Producto</button>
+            </div>
+        </div>
+    </div>
+        <div class="container">
+        <div class="row">
+            <h3>Pedidos</h3>
+            <div class="col-md-12 col-lg-12">
+               {% if pedidos %}
+                    <table id="tabpedidos">
+                        <thead>
+                            <th>ID</th><th>Cliente</th><th>Fecha</th><th>Estado</th><th>Total</th><th>Acciones</th>
+                        </thead>
+                        <tbody>
+                            {% for p in pedidos %}
+                                <tr>
+                                    <td>{{p.id}}</td><td>{{p.cliente}}</td><td>{{p.fecha}}</td><td>{{p.estado}}</td><td><script type="text/javascript">
+                                    var detalle='{{p.detalle|escapejs}}';
+                                    if(detalle!=""&&detalle!=undefined){
+                                        detalle=JSON.parse(detalle);
+                                        var prods=detalle["detalle"];
+                                        var lprecios=[]
+                                        for(var i=0;i<prods.length;i++){
+                                            var cant=0;
+                                            var precio=0;
+                                            if(prods[i]["cantidad"]!="")
+                                                cant=parseInt(prods[i]["cantidad"]);
+                                            if(prods[i]["precio"]!="")
+                                                precio=parseFloat(prods[i]["precio"]);
+                                            lprecios.push(cant*precio);
+                                        }
+                                        var total =0;
+                                        for(var i=0;i<lprecios.length;i++){
+                                            total=total+lprecios[i];
+                                        }
+                                        document.write(total.toString()+' Euros');
+                                    }
+                                </script></td><td><input type="button" class="btn btn-primary boton-mod" info="{{p.get_admin_absolute_url}}" value="Ver/Modificar" ><input type="button" class="btn btn-danger boton-bor" info="{{p.get_admin_absolute_url}}" value="Eliminar"></td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+               {% else %}
+                    NO HAY PEDIDOS
+               {% endif %}
+            </div>
+        </div>
+        </div>
+        <div class="container">
+        <div class="row">
+            <h3>Clientes</h3>
+            <div class="col-md-12 col-lg-12">
+               {% if clientes %}
+                    <table id="tabclientes">
+                        <thead>
+                            <th>Usuario</th><th>Nombre</th><th>Apellidos</th><th>E-mail</th><th>Acciones</th>
+                        </thead>
+                        <tbody>
+                            {% for c in clientes %}
+                                <tr>
+                                    <td>{{c.username}}</td><td>{{c.first_name}}</td><td>{{c.last_name}}</td><td>{{c.email}}</td><td><input type="button" class="btn btn-danger boton-borus" value="Eliminar" info ="{{c.id}}"></td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+               {% else %}
+                    NO HAY CLIENTES
+               {% endif %}
+            </div>
+        </div>
+        </div>
+    <script type="text/javascript">
+        $(document).ready(function(){
+            $("#tabproductos").DataTable();
+            $("#tabpedidos").DataTable();
+            $("#tabclientes").DataTable();
+            $(".boton-mod").click(function(){
+                var url = $(this).attr("info");
+                window.location.pathname=url;
+            });
+            $(".boton-bor").click(function(){
+                var url = $(this).attr("info");
+                $.ajaxSetup({
+                        headers: { "X-CSRFToken": '{{csrf_token}}' }
+                });
+                $.ajax({
+                    method:"DELETE",
+                    url:url,
+                    success:function(msg){
+                        alert(msg);
+                        window.location.reload()
+                    }
+                });
+            });
+            $("#botonanyadir").click(function(event){
+                event.preventDefault();
+                var url = "{% url 'adminproductonuevo' %}"
+                window.location.pathname=url;
+            });
+            $(".boton-borus").click(function(){
+                var url = "{% url 'adminclientes' %}";
+                //var datos={"userid":$(this).attr("info")};
+                var uid=$(this).attr("info");
+                $.ajaxSetup({
+                        headers: { "X-CSRFToken": '{{csrf_token}}' }
+                });
+                //console.log("HOLA",datos)
+                $.ajax({
+                    method:"DELETE",
+                    url:url,
+                    data:uid,
+                    success:function(msg){
+                        alert(msg);
+                        window.location.reload()
+                    }
+                });
+            });
+        });
+    </script>
+{% endblock %}

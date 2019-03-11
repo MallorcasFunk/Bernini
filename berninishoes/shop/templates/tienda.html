@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block content %}
+{%load static%}
+    <div class="container">
+    	<div class="row">
+    		<div class="col-md-12 col-lg-12">
+    			<h1>Nuestros Productos</h1>
+    			<hr class="my-7">
+    		</div>
+    		
+    	</div>
+    </div>
+    <div class="container">
+    	{% if productos %}
+                <div class="row">
+            {% for p in productos %}
+                <div class="col-md-3 col-lg-3">
+                    <div class="card">
+                        <img class="card-img-top" src="{% static 'img/zapato.jpg' %}" alt="Card image cap">
+                        <div class="card-body">
+                            <h5 class="card-title">{{p.nombre}}</h5>
+                            <p class="card-text">{{p.descripcion}}</p>
+                            <a href="{{p.get_absolute_url}}" class="btn btn-primary">Ver producto</a>
+                        </div>
+                    </div>
+                </div>
+                {% if forloop.last%}
+                    </div>
+                {% else %}
+                    {% if forloop.counter|divisibleby:4 %}
+                        </div><div class="row">
+                    {%endif%}
+                {% endif %}
+            {% endfor %}
+    	{% else %}
+
+    	{% endif %}
+    </div>
+{% endblock %}

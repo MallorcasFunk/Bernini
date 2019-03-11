@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+{% block content %}
+{% csrf_token %}
+    <div class="container">
+    	<div class="row">
+    		<div class="col-md-12 col-lg-12">
+    			<h1>Tu Cesta</h1>
+    			<hr class="my-7">
+    		</div>
+    		
+    	</div>
+    </div>
+    <div class="container">
+    	<div class="row">
+            <div class="col-md-12 col-lg-12" id="contenedor">
+                <table id="tablacesta" class="table">
+                    <thead>
+                        <th>Referencia</th><th>Nombre</th><th>Cantidad</th><th>Precio (ud)</th><th>Precio</th><th>Detalle</th><th></th>
+                    </thead>
+                    <tbody>
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="container" id="tramita">
+        <div class="row">
+            <div class="col-md-12 col-lg-12" id="contenedor">
+                <h3>Tramitar Pedido</h3>
+                <form>
+                    <div class="form-group">
+                        <label>Nombre</label>
+                        <input type="text" class="form-control" id="nombre">
+                    </div>
+                    <div class="form-group">
+                        <label>Apellidos</label>
+                        <input type="text" class="form-control" id="apellidos">
+                    </div>
+                    <div class="form-group">
+                        <label>Direccion</label>
+                        <input type="text" class="form-control" id="direccion">
+                    </div>
+                    <div class="form-group">
+                        <label>Localidad</label>
+                        <input type="text" class="form-control" id="localidad">
+                    </div>
+                    <div class="form-group">
+                        <label>Provincia</label>
+                        <input type="text" class="form-control" id="provincia">
+                    </div>
+                    <div class="form-group">
+                        <label>Pais</label>
+                        <input type="text" class="form-control" id="pais">
+                    </div>
+                    <div class="form-group">
+                        <label>Telefono</label>
+                        <input type="text" class="form-control" id="telefono">
+                    </div>
+                    <div class="form-group">
+                        <button class="btn btn-success btn-large" id="btntramitar">Realizar el pedido</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+    function checkIntegrity(){
+                return true;
+            }
+        function calculaPrecio(precio,cant){
+            if(precio!=""&&cant!=""){
+                precio=parseFloat(precio);
+                cant=parseInt(cant);
+                return precio*cant
+            }
+            return 0
+        }
+        $(document).ready(function(){
+            var aux = '{{request.COOKIES.carrito|escapejs}}';
+            console.log(aux)
+            if(aux!=""&&aux!=undefined){
+                var a = JSON.parse(aux);
+                var total=[];
+                for(var i=0;i<a.length;i++){
+                    var precio = calculaPrecio(a[i]["precio"],a[i]['cantidad']);
+                    var tr='<tr info="'+a[i]['rs']+'"><td class="id">'+a[i]["id"]+'</td><td>'+a[i]["nombre"]+'</td><td>'+a[i]["cantidad"]+'</td><td>'+a[i]['precio']+'</td><td>'+precio+'</td>';
+                    var b = a[i]["detalle"];
+                    var tdaux='<td>';
+                    for(var j=0;j<b.length;j++){
+                        tdaux=tdaux+b[j]["nombre"]+':'+b[j]["valor"]+'<br>';
+                    }
+                    tdaux=tdaux+'</td><td><button class="btn btn-danger borraprod">Eliminar</button></td>';
+
+                    tr=tr+tdaux+'</tr>';
+                    $("#tablacesta tbody").append(tr);
+                    total.push(precio);
+                }
+                var totalpedido=0;
+                for(var i=0;i<total.length;i++){
+                    totalpedido=totalpedido+total[i];
+                }
+                $("#tablacesta tbody").append('<tr><td colspan="7"><b>Total Carrito: '+totalpedido+' Euros</b></td></tr>')
+            }
+            else{
+                $("#contenedor").empty();
+                $("#tramita").empty();
+                $("#contenedor").append("<h1>No hay productos en la cesta</h1>")
+            }
+            $(".borraprod").click(function(event){
+                event.preventDefault();
+                var prod=$(this).parent().parent().attr("info");
+                $.ajaxSetup({
+                    headers: { "X-CSRFToken": '{{csrf_token}}' }
+                });
+                $.ajax({
+                    method:'POST',
+                    url:"{% url 'updatecarrito' %}",
+                    data:{'producto':prod},
+                    success:function(msg){
+                        alert(msg)
+                        window.location.reload();
+                    }
+                });
+
+            });
+
+            $("#btntramitar").click(function(event){
+                event.preventDefault();
+                if(checkIntegrity()==true){
+                    var datos={};
+                    var datoscliente={};
+                    var detalle = '{{request.COOKIES.carrito|escapejs}}';
+                    if(detalle!=""&&detalle!=undefined){
+                        detalle=JSON.parse(detalle)
+                    }
+                        datoscliente['nombre']=$("#nombre").val();
+                        datoscliente['apellidos']=$("#apellidos").val();
+                        datoscliente['direccion']=$("#direccion").val();
+                        datoscliente['localidad']=$("#localidad").val();
+                        datoscliente['provincia']=$("#provincia").val();
+                        datoscliente['pais']=$("#pais").val();
+                        datoscliente['telefono']=$("#telefono").val();
+                        datos['detalle']=detalle;
+                        console.log(detalle)
+                        datos['datoscliente']=datoscliente;
+                        var tosend = {"detalle":JSON.stringify(datos)};
+                        //console.log(tosend)
+                        $.ajaxSetup({
+                            headers: { "X-CSRFToken": '{{csrf_token}}' }
+                        });
+                        $.ajax({
+                            method:'POST',
+                            url:"{% url 'checkout' %}",
+                            data:tosend,
+                            success:function(msg){
+                                alert(msg)
+                                window.location.reload()
+                                
+                            }
+                        });
+                        
+                }
+            })
+
+        });
+        
+    </script>
+{% endblock %}

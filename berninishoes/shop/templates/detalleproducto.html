@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% block content %}
+{%load static%}
+    <div class="container">
+    	<div class="row">
+    		<div class="col-md-12 col-lg-12">
+    			<h1>{{producto.nombre}}</h1>
+    			<hr class="my-7">
+    		</div>
+    		
+    	</div>
+    </div>
+    <div class="container">
+    	<div class="row">
+            <div class="col-md-3 cl-lg-3">
+                <img src="{% static 'img/zapato.jpg' %}"/>
+            </div>
+            <div class="col-md-9 col-lg-9">
+                <h3>{{producto.nombre}}</h3>
+                <br>
+                <p>{{producto.descripcion}}</p>
+                <br>
+                <p><b>PRECIO: </b>{{producto.precio}} Euros</p>
+                <br>
+                {%if producto.stock > 0 %}
+                    <p>En Stock</p>
+                    <form id="formpedido">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            Cantidad: <input type="number" id="cantpedido" class="form-control" min="1">
+                        </div>
+                        <div class="form-group" id="botonera">
+                            <button type="button" class="btn btn-primary" id="addchart">Añadir al carrito</button>
+                        </div>
+                    </form>
+                {%else%}
+                    No quedan existencias
+                {%endif%}
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+        function randomString() {
+                var text = "";
+                var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+                for (var i = 0; i < 5; i++){
+                    text += possible.charAt(Math.floor(Math.random() * possible.length));
+                }
+
+                return text;
+            }
+            function checkIntegrity(){
+                return true;
+            }
+        $(document).ready(function(){
+            var atribs = '{{producto.atributos|escapejs}}';
+            //console.log(atribs);
+            if(atribs!=""&&atribs!=undefined){
+                var ats=JSON.parse(atribs);
+                var lista = [];
+                for(var i=0;i<ats.length;i++){
+                    var clase = randomString();
+                    var valores = ats[i]['valor'].split(",");
+                    var nom = ats[i]['nombre'];
+                    var cf = '<div class="form-control" id="'+clase+'"><span class="attrjson">'+nom+'</span>';
+                    var select = '<select>';
+                    for(var j=0;j<valores.length;j++){
+                        select=select+'<option value="'+valores[j]+'">'+valores[j]+'</option>';
+                    }
+                    select=select+'</select>';
+                    cf=cf+select+'</div>';
+                    $(cf).insertBefore("#botonera");
+                    lista.push(clase);
+                }
+                $("#formpedido").attr("info",lista.join());
+                $("#addchart").click(function(event){
+                    event.preventDefault();
+                    if(checkIntegrity()==true){
+                        var datos ={
+                            "id":'{{producto.id}}',
+                            "nombre":'{{producto.nombre}}',
+                            "slug":'{{producto.slug}}',
+                            "cantidad":$("#cantpedido").val(),
+                            "rs":randomString(),
+                            "precio":'{{producto.precio}}'
+                        }
+                        var ids=$("#formpedido").attr("info");
+                        if(ids!=""&&ids!=undefined){
+                            var aux = ids.split(",");
+                            var lista=[];
+                            for(var i =0; i<aux.length;i++){
+                                var dict={}
+                                var nomattrjson=$("#"+aux[i]).find('.attrjson').text();
+                                var valatrrjson=$("#"+aux[i]).find('select option:selected').text();
+                                dict['nombre']=nomattrjson;
+                                dict['valor']=valatrrjson;
+                                lista.push(dict);
+                            }
+                            datos["detalle"]=JSON.stringify(lista);
+                            $.ajaxSetup({
+                                headers: { "X-CSRFToken": '{{csrf_token}}' }
+                            });
+                            $.ajax({
+                                method:'POST',
+                                url:"{% url 'carrito' %}",
+                                data:datos,
+                                success:function(msg){
+                                    alert(msg);
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+{% endblock %}

@@ -1,0 +1,171 @@
+{% extends 'baseadmin.html' %}
+{% block content %}
+    <div class="container">
+    	<div class="row">
+    		<div class="col-md-12 col-lg-12">
+    			<h1>Nuevo producto</h1>
+    			<hr class="my-7">
+    		</div>
+    		
+    	</div>
+    </div>
+    <div class="container">
+    	<div class="row">
+            <div class="col-md-12 col-lg-12">
+                <form id="formadd">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label>Nombre</label>
+                        <input type="text" class="form-control" id="nomprod" placeholder="Nombre">
+                    </div>
+                    <div class="form-group">
+                        <label>Descripcion</label>
+                        <input type="text" class="form-control" id="descprod" placeholder="Descripcion">
+                    </div>
+                    <div class="form-group">
+                        <label>Precio</label>
+                        <input type="number" id="precprod" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Stock</label>
+                        <input type="number" id="stockprod" class="form-control" min="0">
+                    </div>
+                    <div class="form-group" id="botonera">
+                        <button type="submit" class="btn btn-success" id="guardarprod">Guardar</button>
+                        <button type="button" class="btn btn-primary" id="addattr" data-toggle="modal" data-target="#modaladdattr">Añadir atributo</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div class="modal fade" id="modaladdattr" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLabel">Añadir Atributo</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label>Nombre</label>
+                            <input type="text" id="addattrnom" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>Valores (separados por comas si es más de una opción)</label>
+                            <input type="text" id="addattrvalue" class="form-control">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-danger" data-dismiss="modal" id="cancelarattr">Cerrar</button>
+                        <button type="button" class="btn btn-primary" id="aceptarattr">Aceptar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script type="text/javascript">
+            function randomString() {
+                var text = "";
+                var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+                for (var i = 0; i < 5; i++){
+                    text += possible.charAt(Math.floor(Math.random() * possible.length));
+                }
+
+                return text;
+            }
+
+            function checkIntegrity(){
+                return true;
+            }
+
+            function anyade_atributo(datos){
+                var clase=randomString();
+                var cf='<div class="form-group" id="'+clase+'">';
+                var input1 = '<input type="text" class="nom" value="'+datos["nombre"]+'">';
+                var input2 = '<input type="text" class="val" value="'+datos["valor"]+'">';
+                cf=cf+input1+input2+'</div>';
+                $(cf).insertBefore("#botonera");
+                var atrform=$("#formadd").attr('info');
+                if(atrform==undefined){
+                    $("#formadd").attr('info',clase);
+                }
+                else{
+                    if(atrform=="")
+                        $("#formadd").attr('info',clase);
+                    else{
+                        atrform=atrform+","+clase
+                        $("#formadd").attr('info',atrform);
+                    }
+                }
+                //console.log("atrform",atrform)
+            }
+            $(document).ready( function(){
+                $("#aceptarattr").click(function(event){
+                    //console.log($("#addattrvalue").val(),$("#addattrnom").val())
+                    if($("#addattrnom").val() !="" && $("#addattrvalue").val() !=""){
+                        var datosattr = {"nombre":$("#addattrnom").val(),"valor":$("#addattrvalue").val()}
+                        //console.log(datosattr)
+                        anyade_atributo(datosattr);
+                        $("#modaladdattr").modal("hide");
+                        $("#addattrnom").val("");
+                        $("#addattrvalue").val("");
+                    }
+                });
+                $("#cancelarattr").click(function(event){
+                    $("#addattrnom").val("");
+                    $("#addattrvalue").val("");
+                });
+                $("#guardarprod").click(function(event){
+                    event.preventDefault();
+                    if(checkIntegrity()==true){
+                        var datos={"nombre":$("#nomprod").val(),"descripcion":$("#descprod").val(),"precio":$("#precprod").val(),"stock":$("#stockprod").val()};
+
+                        var ids=$("#formadd").attr("info");
+                        if(ids != undefined && ids!=""){
+                            var aux=ids.split(",");
+                            var lista = [];
+                            for(var i =0; i<aux.length;i++){
+                                var dict={}
+                                var nomattrjson=$("#"+aux[i]).find('input.nom').val();
+                                var valatrrjson=$("#"+aux[i]).find('input.val').val();
+                                dict['nombre']=nomattrjson;
+                                dict['valor']=valatrrjson;
+                                lista.push(dict)
+                            }
+                            datos["atributos"]=JSON.stringify(lista);
+                        }
+                        else
+                            datos["atributos"]="";
+                        console.log(datos);
+                        $.ajaxSetup({
+                            headers: { "X-CSRFToken": '{{csrf_token}}' }
+                        });
+                        $.ajax({
+                            type:'POST',
+                            data:datos,
+                            success:function(msg){
+                                alert(msg);
+                                $("#nomprod").val("")
+                                $("#descprod").val("")
+                                $("#precprod").val("")
+                                $("#stockprod").val("")
+                                var ids=$("#formadd").attr("info");
+                                $("#formadd").attr("info","");
+                                if(ids != undefined && ids!=""){
+                                    var aux=ids.split(",");
+                                    for(var i=0;i<aux.length;i++){
+                                        $("#"+aux[i]).remove();
+                                    }
+                                }
+                            }
+                        });
+                    }
+                    else{
+                        alert("Campos requeridos vacios");
+                    }
+                });
+            });
+        </script>
+    </div>
+{% endblock %}
